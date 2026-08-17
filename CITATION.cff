@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software in academic work, please cite it as below."
+title: "deep-nonlinear-causality: Multivariate Nonlinear Granger Causality Detection with Deep Learning and Machine Learning"
+version: 1.0.2
+date-released: 2026-08-17
+authors:
+  - family-names: "Al khatib"
+    given-names: "Abdullah Mohammad Ghazi"
+    orcid: "https://orcid.org/0000-0002-1352-2348"
+    affiliation: "Department of Banking and Financial Institutions, Faculty of Administrative Sciences, Al-Sham Private University, Damascus, Syrian Arab Republic"
+    email: "abduall.kh.foas@aspu.edu.sy"
+repository-code: "https://github.com/ABDULLAH-AL-KHATIB/deep-nonlinear-causality"
+keywords:
+  - "causality"
+  - "granger-causality"
+  - "deep-learning"
+  - "machine-learning"
+  - "time-series"
+  - "econometrics"
+  - "banking-and-finance"
+license: "MIT"

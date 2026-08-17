@@ -5,17 +5,19 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="deep-nonlinear-causality",
-    version="1.0.0",
+    version="1.0.2",
     author="Dr. Abdullah Mohammad Ghazi Al khatib",
-    author_email="genius.275@hotmail.com",
+    author_email="abduall.kh.foas@aspu.edu.sy",
+    maintainer_email="genius.275@hotmail.com",
     description="Multivariate Nonlinear Granger Causality Detection with Deep Learning and Machine Learning",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/ABDULLAH-AL-KHATIB",
+    url="https://github.com/ABDULLAH-AL-KHATIB/deep-nonlinear-causality",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
+        "Intended Audience :: Financial and Insurance Industry",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

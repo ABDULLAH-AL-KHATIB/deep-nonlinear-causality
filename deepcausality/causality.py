@@ -32,13 +32,13 @@ class CausalityTest:
         X_r_tr, X_r_te = X_r[:split], X_r[split:]
         y_tr, y_te = y_t[:split], y_t[split:]
 
-        # Cached Restricted Model
+        # Cached Restricted Model (Baseline H0)
         m_r = create_model(model_type, sh_r, random_state=self.random_state, **kwargs)
         fit_model(m_r, X_r_tr, y_tr, model_type, **kwargs)
         pred_r = predict_model(m_r, X_r_te, model_type)
         mse_r = mean_squared_error(y_te, pred_r)
 
-        # Baseline Full Model
+        # Full Model (Alternative H1)
         m_f = create_model(model_type, sh_f, random_state=self.random_state, **kwargs)
         fit_model(m_f, X_f_tr, y_tr, model_type, **kwargs)
         pred_f = predict_model(m_f, X_f_te, model_type)
@@ -73,7 +73,12 @@ class CausalityTest:
             "lag": lag,
             "n_permutations": n_permutations,
             "author": "Dr. Abdullah Mohammad Ghazi Al khatib",
-            "affiliation": "Al Sham Private University",
+            "department": "Department of Banking and Financial Institutions",
+            "faculty": "Faculty of Administrative Sciences",
+            "affiliation": "Al-Sham Private University, Damascus, Syrian Arab Republic",
+            "academic_email": "abduall.kh.foas@aspu.edu.sy",
+            "email": "genius.275@hotmail.com",
+            "orcid": "https://orcid.org/0000-0002-1352-2348",
             "github": "https://github.com/ABDULLAH-AL-KHATIB"
         }
 
