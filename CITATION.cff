@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in academic work, please cite it as below."
 title: "deep-nonlinear-causality: Multivariate Nonlinear Granger Causality Detection with Deep Learning and Machine Learning"
-version: 1.0.2
+version: 1.1.0
 date-released: 2026-08-17
 authors:
   - family-names: "Al khatib"

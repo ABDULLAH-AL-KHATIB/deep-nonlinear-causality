@@ -25,6 +25,7 @@ Classical Granger causality relies on linear Vector Autoregressions (VAR), faili
 ### Core Capabilities:
 - **Multivariate Causal Inputs ($X \in \mathbb{R}^k$):** Test joint causality of multiple coupled variables.
 - **Conditional Causality ($X \to Y \mid Z$):** Control for external confounders $Z$ to eliminate spurious causality.
+- **Panel Data Support ($i = 1..N$, $t = 1..T$):** Native nonlinear Granger causality for cross-sectional time-series (long-format DataFrames or 3D arrays), with entity-aware lag windows, entity-wise train/test splits, and panel permutation nulls.
 - **Autocorrelation Preservation:** Employs **Circular Block Bootstrap** to maintain serial correlation and avoid inflated Type-I errors.
 - **Restricted Model Caching:** Fits the baseline model once per hypothesis test, speeding up computation by ~50%.
 - **Memory Engine:** Automatic TensorFlow session clearing and garbage collection to prevent GPU/RAM memory leaks.
@@ -82,6 +83,40 @@ res = cond_engine.run_test(y=Y, x=X, z=Z, lag=2, model_type='lstm', n_permutatio
 print(f'Conditional Causality Detected: {res["is_causal"]}')
 ```
 
+### 3. Panel Data Nonlinear Causality ($X_{it} \to Y_{it}$)
+```python
+import pandas as pd
+from deepcausality import PanelCausalityTest
+
+# Long-format panel: firm-year observations
+df = pd.DataFrame({
+    "firm": [...], "year": [...], "risk": [...], "exposure": [...], "gdp": [...]
+})
+
+engine = PanelCausalityTest(random_state=42)
+res = engine.run_test(
+    df,
+    entity_col="firm", time_col="year",
+    var_cols=["risk", "exposure", "gdp"],   # [y, x, z...]
+    lag=2,
+    model_type="random_forest",
+    n_permutations=50,
+    block_size=5,          # within-entity circular block bootstrap null
+    entity_effects=True,   # optional within-entity demeaning (fixed effects)
+    time_effects=True,     # optional cross-sectional demeaning per period
+)
+print(f'Panel Causality Detected: {res["is_causal"]} (p={res["p_value"]:.4f})')
+print(f'Entities: {res["n_entities"]}, Periods: {res["n_periods"]}, Obs: {res["n_observations"]}')
+```
+
+Panel features:
+- Accepts **long-format pandas DataFrames** or **3D numpy arrays** `(n_entities, n_periods[, n_vars])`.
+- Lag windows never cross entity boundaries; unbalanced entities are dropped automatically.
+- **Entity-wise train/test splitting** prevents information leakage across units.
+- Two permutation nulls: whole-entity trajectory shuffling (default) or **within-entity block bootstrap** (`block_size >= 2`).
+- Optional **two-way fixed-effects demeaning** (`entity_effects`, `time_effects`).
+- Works with all estimators, including LSTM/GRU/CNN sequential architectures.
+
 ---
 
 ## 🌍 Research Application Domains
@@ -106,7 +141,7 @@ If you use this package in your academic research, please cite it as follows:
   address      = {Damascus, Syrian Arab Republic},
   url          = {https://github.com/ABDULLAH-AL-KHATIB/deep-nonlinear-causality},
   orcid        = {https://orcid.org/0000-0002-1352-2348},
-  version      = {1.0.2}
+  version      = {1.1.0}
 }
 ```
 
