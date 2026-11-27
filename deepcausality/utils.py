@@ -53,6 +53,135 @@ def prepare_data(y, x, lag=1, z=None):
 
     return np.array(X_full, dtype=np.float32), np.array(X_restr, dtype=np.float32), np.array(y_target, dtype=np.float32)
 
+def to_panel_arrays(panel, entity_col, time_col, var_cols):
+    """Convert a long-format panel DataFrame into (n_entities, n_periods, n_vars) arrays.
+
+    Returns:
+        y3d, x3d, z3d : 3D numpy arrays (or None for z3d if no conditioning vars)
+        entities      : ordered list of entity ids
+        times         : ordered list of time ids
+    """
+    if not isinstance(panel, pd.DataFrame):
+        raise ValueError("panel must be a pandas DataFrame in long format")
+    needed = [entity_col, time_col] + list(var_cols)
+    missing = [c for c in needed if c not in panel.columns]
+    if missing:
+        raise ValueError(f"Panel is missing required columns: {missing}")
+
+    df = panel[needed].dropna()
+    entities = sorted(df[entity_col].unique())
+    times = sorted(df[time_col].unique())
+    n, T = len(entities), len(times)
+    e_idx = {e: i for i, e in enumerate(entities)}
+    t_idx = {t: i for i, t in enumerate(times)}
+
+    rows = df[entity_col].map(e_idx).to_numpy()
+    cols = df[time_col].map(t_idx).to_numpy()
+    values = df[list(var_cols)].to_numpy(dtype=np.float32)
+
+    cube = np.full((n, T, len(var_cols)), np.nan, dtype=np.float32)
+    cube[rows, cols] = values
+
+    # Keep entities observed in every period (balanced), preserving time alignment.
+    complete = ~np.isnan(cube[:, :, 0]).any(axis=1) & ~np.isnan(cube).any(axis=(1, 2))
+    cube = cube[complete]
+    entities = [e for e, c in zip(entities, complete) if c]
+    if cube.shape[0] == 0:
+        raise ValueError("No entity is observed in every period; cannot build a balanced panel")
+
+    y3d = cube[:, :, 0]
+    x3d = cube[:, :, 1]
+    z3d = cube[:, :, 2:] if cube.shape[2] > 2 else None
+    return y3d, x3d, z3d, entities, times
+
+
+def prepare_panel_data(y3d, x3d, lag=1, z3d=None):
+    """Build lag features pooled across all entities of a balanced panel.
+
+    Args:
+        y3d, x3d: arrays of shape (n_entities, n_periods[, d])
+        z3d: optional array of shape (n_entities, n_periods, d_z)
+        lag: number of past periods to include per variable
+
+    Returns:
+        X_full, X_restr, y_target, entity_ids
+        Rows are grouped by entity (all rows of entity 0 first, etc.) so that
+        permutation tests and train/test splits can respect entity boundaries.
+    """
+    y3d = np.asarray(y3d, dtype=np.float32)
+    x3d = np.asarray(x3d, dtype=np.float32)
+    if y3d.ndim == 2:
+        y3d = y3d[:, :, None]
+    if x3d.ndim == 2:
+        x3d = x3d[:, :, None]
+    if y3d.shape[:2] != x3d.shape[:2]:
+        raise ValueError("Y and X panel dimensions mismatch (entities/periods)")
+    z3d_ = None
+    if z3d is not None:
+        z3d_ = np.asarray(z3d, dtype=np.float32)
+        if z3d_.ndim == 2:
+            z3d_ = z3d_[:, :, None]
+        if z3d_.shape[:2] != y3d.shape[:2]:
+            raise ValueError("Z panel dimensions mismatch with Y")
+    n, T = y3d.shape[0], y3d.shape[1]
+    if T <= lag:
+        raise ValueError(f"Panel has {T} periods; number of periods must be greater than lag {lag}")
+
+    X_full, X_restr, y_target, entity_ids = [], [], [], []
+    for i in range(n):
+        for t in range(lag, T):
+            y_past = y3d[i, t - lag:t].flatten()
+            x_past = x3d[i, t - lag:t].flatten()
+            if z3d_ is not None:
+                z_past = z3d_[i, t - lag:t].flatten()
+                X_full.append(np.concatenate([y_past, x_past, z_past]))
+                X_restr.append(np.concatenate([y_past, z_past]))
+            else:
+                X_full.append(np.concatenate([y_past, x_past]))
+                X_restr.append(y_past)
+            y_target.append(y3d[i, t, 0])
+            entity_ids.append(i)
+
+    return (
+        np.array(X_full, dtype=np.float32),
+        np.array(X_restr, dtype=np.float32),
+        np.array(y_target, dtype=np.float32),
+        np.array(entity_ids, dtype=np.int64),
+    )
+
+
+def block_permutation_panel(y3d, x3d, z3d=None, block_size=None, rng=None):
+    """Permute the X panel while preserving within-entity temporal dependence.
+
+    Two schemes:
+      - block_size given (>=1): circular block bootstrap *within each entity*.
+      - block_size None / <=1: permute whole entity trajectories (cross-sectional
+        shuffle), which preserves each entity's internal dynamics and destroys
+        any genuine causal link only under cross-entity exchangeability.
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    x3d = np.asarray(x3d, dtype=np.float32)
+    squeeze = False
+    if x3d.ndim == 2:
+        x3d = x3d[:, :, None]
+        squeeze = True
+    n, T = x3d.shape[0], x3d.shape[1]
+
+    if block_size is None or block_size <= 1:
+        out = x3d[rng.permutation(n)]
+    else:
+        out = np.empty_like(x3d)
+        for i in range(n):
+            n_blocks = int(np.ceil(T / block_size))
+            starts = rng.integers(0, T, size=n_blocks)
+            idx = []
+            for s in starts:
+                idx.extend([(s + k) % T for k in range(block_size)])
+            out[i] = x3d[i, idx[:T]]
+    return out[:, :, 0] if squeeze else out
+
+
 def prepare_sequential_data(y, x, lag=1, z=None):
     y_2d = to_2d_array(y, "y")
     x_2d = to_2d_array(x, "x")

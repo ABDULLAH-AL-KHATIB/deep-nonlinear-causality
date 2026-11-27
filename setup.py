@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="deep-nonlinear-causality",
-    version="1.0.2",
+    version="1.1.0",
     author="Dr. Abdullah Mohammad Ghazi Al khatib",
     author_email="abduall.kh.foas@aspu.edu.sy",
     maintainer_email="genius.275@hotmail.com",

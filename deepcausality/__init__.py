@@ -10,10 +10,17 @@ ORCID: https://orcid.org/0000-0002-1352-2348
 GitHub: https://github.com/ABDULLAH-AL-KHATIB
 Date: 17-08-2026
 """
-from .causality import CausalityTest, ConditionalCausalityTest
-from .utils import prepare_data, prepare_sequential_data, block_permutation
+from .causality import CausalityTest, ConditionalCausalityTest, PanelCausalityTest
+from .utils import (
+    prepare_data,
+    prepare_sequential_data,
+    block_permutation,
+    to_panel_arrays,
+    prepare_panel_data,
+    block_permutation_panel,
+)
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 __author__ = "Dr. Abdullah Mohammad Ghazi Al khatib"
 __department__ = "Department of Banking and Financial Institutions"
 __faculty__ = "Faculty of Administrative Sciences"
@@ -27,7 +34,11 @@ __date__ = "17-08-2026"
 __all__ = [
     "CausalityTest",
     "ConditionalCausalityTest",
+    "PanelCausalityTest",
     "prepare_data",
     "prepare_sequential_data",
     "block_permutation",
+    "to_panel_arrays",
+    "prepare_panel_data",
+    "block_permutation_panel",
 ]
